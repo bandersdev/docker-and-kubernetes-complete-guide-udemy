@@ -1,0 +1,48 @@
+Dive into Docker!
+
+Why do we use Docker?
+
+- Docker wants to make it really easy and straightforward to install and run software on any computer
+- Gives redis as an example
+	- An in-memory datastore
+	- Standard installations can run into problems like missing packages
+	- Running a single Docker command makes it very easy
+
+What is Docker?
+
+- Docker is a platform/ecosystem around creating and running containers
+- An image is built from a Dockerfile or downloaded from Docker Hub
+- Containers run instances of images
+
+Running Hello World
+
+- Docker client talks to docker server
+- Docker server checks if it has Hello World in its image cache
+- It doesn't find it so it looks for the image on Docker Hub
+- Downloads that image and stores it in the image cache
+- Goes to the image cache for future container launches
+- Now an instance of the Hello World image is created as a container
+
+But what is a container _really_?
+- Diagram of a diagram of processes making system calls to the kernel, which then interacts with actual devices
+- System calls are basically function invocations
+- Thought experiments with two services on the same system that need different verions of python and only version can be installed on the system
+	- OS tool called namespacing could be used to separate the hard drive into sections that each handle separate portions of the hard drive
+		- Namespacing isolates resoures per process or group of processes
+		- Doesn't have to just be the hard drive. Can be network, useres, hostnames, processes, etc.
+	- Control groups are used to limit the amount of resources a process can use
+		- Memory, bandwidth, etc
+-A container is a process/set of processes which have a grouping of resources specifically assigned to it.
+
+-Process -> System call -> Kernel -> Direct call to specific portions of HDD, network, RAM, CPU, etc
+
+-Images are actually filesystem snapshots, like a with a VM
+	- Images also contain a startup command (ex run chrome)
+
+-When starting a container
+	- Image is placed in section of the hard drive reserved for the container
+
+How does Docker run on my computer?
+	- Namespacing and control groups are not part of every operating system.
+		- They belong to Linux
+	- For non-Linux operating systems a Linux virtual machine is created to run Docker containers

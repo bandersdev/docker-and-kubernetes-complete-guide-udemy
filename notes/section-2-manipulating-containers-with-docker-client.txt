@@ -1,0 +1,99 @@
+Manipulating Containers with the Docker Client
+
+Docker Run
+
+- Downloads or grabs an image (snapshot) 
+- Runs it in a container as described in the last section
+- Reminder: run gives us not only an image, but a starting command
+- An alternate command can be specified by attaching it to the end of the Docker run command
+- hello-world image doesn't allow for running many commands. It contains only a single file
+	- busybox contains a more complete filesystem
+
+Listing Running Containers
+
+- docker ps
+- By default only shows running containers
+- Can make it show all with -a/--all
+- Most frequently used to get container ids
+
+Container Lifecycle
+
+- Creating a container and starting it are two separate processes
+- docker run = docker create + docker start
+- docker create creates containers
+- docker start runs the container
+- The process of creating a container involves copying the filesystem for the image
+- By default docker run shows the container id, docker start does not. Use the -a flag for docker start
+
+Restarting Stopped Containers
+
+- Just because a container is stopped does not mean it can't be used again
+- Use docker ps -a to find all containers
+- Start the container with docker start
+- Restarting containers will rerun the start command set when the container is created, not the default command
+- The command cannot be changed for a container. To run with a new command replace the container
+
+Removing Stopped Containers
+
+- Stopped containers take up space
+- Use docker system prune
+
+Retrieve Log Output
+
+- You don't always want to attach the terminal but you may still want logs
+- Use the docker logs command
+- This only accesses logs. It does not rerun anything
+
+Stopping Containers
+
+- Can use docker stop or kill commands 
+- Stop uses a SIGTERM command - gives the process time to shut down
+- Kill issues a SIGKILL command - stop immediately, no cleanup
+- Ideally always stop with docker stop not docker kill unless the container is not responding
+- By default Docker gives 10 seconds for the stop command to complete before it automatically kills it
+- A test container with the ping command does not respond to the SIGTERM command and instead needs to be killed after 10 seconds
+
+Multi-Command Contaienrs
+
+- redis-server and redis-cli
+- docker's redis image is the redis server
+- Outside of containers you can't run commands that reach inside docker by default
+- Need to be able to run a second command inside a running a container
+
+Executing Commands in Running Containers
+
+- Use docker exec
+- ex. docker exec -it 99bbf6b9e670 redis-cli
+- The it flag allows us to enter text on the keyboard and have it be sent to the container
+
+The purpose of the IT Flag
+
+- Every linux process has 3 communication channels
+	- STDIN
+	- STDOUT
+	- STDERR
+- When we type input into a Docker container it is put into STDIN
+- When we get output from the container it is put in STDOUT
+- STDERR is directed with STDOUT to the screen of the terminal
+- The -it flag is actually both the -i and -t flags
+	- -i means attach the terminal
+	- -t means mostly properly formats text coming in and going out
+	- Skipping -t makes it so you can't see prompts coming back
+
+Getting a Command Prompt in a Container
+
+- The most common use of the -it flag
+- Allows for only using docker exec once
+- Brief summary of what sh is
+
+Starting with a Shell
+
+- Can use the it flag to start a shell right as the container starts
+- This displaces other default commands, but allows for debugging
+- The downside of using docker run with sh is that you're not running another process
+	- Usually better to start with another command and attach with docker exec
+
+Container Isolation
+
+- Two containers do not share file systems by default
+- Unless containers are explicitly linked they are not connected in this way
