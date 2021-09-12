@@ -1,0 +1,13 @@
+# Version of docker compose to use
+version: '3'
+
+services:
+  redis-server:
+    image: 'redis'
+  node-app:
+    #restart: always
+    #restart: on-failure
+    restart: unless-stopped
+    build: .
+    ports: 
+      - 4001:8081
