@@ -1,0 +1,73 @@
+Docker Compose with Multiple Local Conatiners
+
+App Overview
+
+- Going to build an docker web application that displays the number of times it has been visited
+- Need a web server to handle requests and html (Node)
+- Need redis to hold the number of times the page has been visited
+
+- Could put this all in one container BUT eventually you might want to scale it, and that would lead to each instance having its own separate redis instance and the counts in those instances would not be synced up
+- Better to split this into two containers, then later the node apps can scale and reference the same redis instance
+
+App Server Starter Code
+
+- Refer to visits directory
+
+Assembing a Dockerfile
+
+- Refer to visits directory
+
+Introducing Docker Compose
+
+- Starting the two processes in two containers leads to a failures
+	- Two isloated processes
+	- Need to set up some networking infrastructure
+- 2 options
+	- Make use of the Docker CLI to set up a network
+		- Its a pain in the butt
+		- Needs a handful of commands to be run every time you start containers
+		- Basically never see anyone in industry set up networks this way
+	- Use Docker Compose
+		- A separate CLI tool, but leverages Docker cLI
+		- Usecd to start up multiple Docker containers at the same time with networking
+		- Automates some of the long arguments passed to docker run and other stuff
+
+Docker Compose Files
+
+- docker-compose.yml
+- Basically a special way of describing Docker CLI commands without actually having to write all the commands
+- Services roughly translate to containers in docker compose files
+
+Networking with Docker Compose
+
+- By defining services in the same docker-compose.yml file ensure they the containers all have access to eachother
+- Port opening is actually just for our local machines
+	- The containers can talk
+- In the index.js file specifies the redis container by service name
+
+Docker Compose Commands
+
+- Added cheat sheet
+
+Stopping Docker Compose Containers
+
+- Added to cheat sheet
+
+Container Maintenance with Compose
+
+- How to deal with containers that crash?
+- Break server on purpose to have it exit when someone hits a page
+
+Automatic Container Restart
+
+- Specify a restart policy in docker compose file
+	- Set at a service level
+	- Policies:
+		- "no" (this actually needs to be in quotes in the dockerfile as no is a reserved word (false))
+		- always
+		- on-failure
+		- unless-stopped
+
+Container Status with Docker Compose
+
+- 
