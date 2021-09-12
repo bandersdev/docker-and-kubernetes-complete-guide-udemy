@@ -1,0 +1,85 @@
+Making Real Projects with Docker
+
+Project Outline
+
+- Goal: Create a tiny nodejs web app and wrap it a docker container and access it from our browser
+- Steps
+	- Create Node JS web app
+	- Create a Dockerfile
+	- Build image from dockerfile
+	- Run image as container
+	- Connect to web app from a browser
+
+- Disclaimer: We're going to do a few things slightly wrong on purpose
+
+Node Server Setup
+
+- Refer to the simpleweb directory
+
+A few planned errors
+
+- Node JS Apps
+	- Have to install dependencies before running the app with 'npn install'
+	- Star the server with 'npm start
+	- Of course npm must be installed
+
+- Dockerfile creation flow review
+	- Specify base image
+	- Run some commands to install additional programs
+	- specify a command to run on container startup
+
+- For node this looks something like
+	- FROM alpine
+	- RUN npm install
+	- CMD ["npm", "start"]
+- But with a little more
+- Time to do a few things slightly wrong!
+
+Base Image Issues
+
+- Alpine is a very small image and won't have many things installed by default
+- Alpine as a tag for other images means the minimal image required to make that services for that image work
+	- Ex. The node image is much larger than the node:alpine image.
+
+A Few Missing Files
+
+- When building the Dockerfile from the previous step /usr/app/package.json is missing
+	- It hasn't been copied into the intermediate container
+	- The only files in the container are exactly what came out of the file system snapshot until files are explicitly copied
+
+Copying Build Files
+
+- COPY predictably copies files from the local filesystem to the container
+- COPY is relative to the Dockerfile's directory (build context)
+
+Container Port Mapping
+
+- By default no incomming traffic on the host computer is sent to the container
+- An explicit port mapping must be set
+- Port mapping means when a request is sent to a port on the host, automatically redirect that request to a port on the container
+- HOWEVER Docker containers can make requests to the outside
+- Can open a port with the docker run command's -p flag
+- The port on the host does not need to be the host in the container
+
+Specifying a Working Directory
+
+- By default files are dumped into /
+	- Not a very good practice
+	- Can override files, especially somewhere like lib
+- Specify the directory with the WORKDIR in the Dockerfile
+	- WORKDIR <directory path>
+- Any following commands will be executed relative to this folder
+- Seems like this is something that could be set multiple times over the course of a complex build
+
+Unnecessary Rebuilds
+
+- If source files are updated on the host, they aren't automatically updated in the Docker image
+- Rebuilding the image lets us put in new files, but this isn't ideal
+- By copying an entire directory with COPY we copy all files again
+- All steps after this copy have to be re-run, including downloading dependencies
+
+Minimizing Cache Busting and Rebuilds
+
+- Splitting the COPY operation into two steps
+- Copy package.json file first, cause that's what dependencies depend on
+- Then copy the js files after installing dependencies
