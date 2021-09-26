@@ -31,6 +31,10 @@ docker run -p <host port>:<container port> <image id/name>
 
 # ex. mapping different host and container ports
 docker run -p 80:8080 bryananders/simpleweb
+
+# run with volume
+# the first switch puts a bookmark on the node_modules folder
+docker run -v /app/node_modules -v $(pwd)/app <image id>
 ```
 
 ### List containers
@@ -93,6 +97,9 @@ docker build .
 # tag the image
 # It can be run with docker run <tag>
 docker build -t bryananders/redis-server:latest .
+
+# Spefify dockerimage
+docker build -f Dockerfile.dev
 ```
 
 ### Docker Commit
