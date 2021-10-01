@@ -1,0 +1,99 @@
+  web:
+    stdin_open: true
+
+
+ docker-compose down && docker-compose up --build
+
+Shorthand with Docker Compose
+
+- See the docker-compose.yml file in the frontend directory
+
+
+Overriding Dockerfile Selection
+
+- context option for build in docker-compose
+  - tells docker-compose where to look for resources
+- docckerfile option allows for specifying the dockerfile file
+
+Do we need Copy?
+
+- Not in this case, but its ok to leave it as a reminder/reference of other use case without a volume
+- Less efficient though
+
+Executing Tests
+
+- Make use of the npm run test command
+
+Live Updating Tests
+
+- Modify src/App.test.js file to add extra test, then remove it later
+- How to run tests in docker compose?
+  - Attach to existing container
+    - docker exec -it <container> npm run test
+    - Not the best possible solution
+      - Clunky
+
+Docker Compose for Running Tests
+
+- Create another service
+  - Still not a _perfect_ solution
+  - Basically copy the first service, but:
+    - Remove ports
+    - Override starting command
+  - Downside: Getting all the test output in docker-compose and it is not interactive
+
+Shortcomings on Testing
+
+- Try using docker attach to attach to the container and run
+  - Doesn't work
+  - Attach a terminal with docker exec -it <container id> sh
+  - There is more than one process running in the container
+    - npm then starts an actual node command that runs the tests
+    - docker attach attaches to the npm command, but the npm command isn't in charge of receiving commands to run test, the node process is
+  - If a test suite is non-interactive this isn't a problem
+
+Need for Nginx
+
+- Eventually building a production version of the application with 'npm run build'
+- Dev server is what is required in the development environment
+  - It handles requests and serves files
+- The dev server does not exist in production, instead a single application file is used
+  - Dev server takes up more resources serving files that can change
+  - In production files are not modified
+- Need a server to serve js and html files for production
+- Using Nginx for this
+  - Very simple server
+- Create new production Dockerfile
+  - Will start nginx
+
+Multi-Step Docker Builds
+
+- Making a new production Dockerfile
+  - Dockerfile flow:
+    - Use node:alipne
+    - Copy package.json
+    - Install dependencies
+      - Only needed to execute 'npm run build!'
+      - Don't need most files to run in production
+    - Run 'npm run build'
+    - Start nginx
+      - Where is nginx coming from?
+      - There is an nginx image
+        - How to use two images?
+- Making a multistep Dockerfile
+  - Build phase
+    - Use node:alpine to build the npm app
+  - Run phase
+    - Use nginx
+    - Copy over result of 'npm run build'
+      - The rest is left behind
+    - Start nginx
+
+Implementing Multi-Step Builds
+
+- name build stage 'builder'
+- use --from=<dir> with COPY to copy from another stage
+  - Leaves everything else behind from stage to stage
+- Refer to the Dockerfile
+
+Running Nginx
