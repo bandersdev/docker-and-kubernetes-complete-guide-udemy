@@ -1,0 +1,98 @@
+Continuous Integration and Deployment with AWS
+
+Services Overview
+
+- Store repo on Github
+- Travics CI
+	- The service that runs our test automatically and eventually deploys the test
+- AWS for deployment
+	- (Free, but with credit card)
+
+Github Setup
+
+- Creating and cloning a new repo
+- Adding frontent to it
+- Pushing to remote
+- New repo is https://github.com/bandersdev/docker-react
+
+Travis CI Setup
+
+- Flow:
+	- Push new code to Github
+	- Github tells Travis to do its thing
+	- Travis pulls code in repo and does work
+- travis-ci.com
+
+Travis YML File Configuration
+
+- Tell Travis we need a copy of docker running
+- Build our image using Dockerfile.dev
+- Tell travis how to run our test suite
+- Tell travis how to deploy our code to AWS
+- Named .travis.yml
+- View the file in the repository
+
+A Touch More Setup
+
+- Adding script run command
+- npm run test hangs, so need to make it stop
+
+Auutomatic Build Creation
+
+- Commit new changes
+- Go to the repo in the travis repo dashboard
+- It pops up eventually and runs the build
+
+Required Updates for Amazon Linux 2
+
+- Use Amazon Linux 2 to deploy
+- Move docker-compose -> docker-compose-dev.yml
+	- Amazon automatically picks up docker-compose.yml
+- Update docker-compose cheatsheet to show specifying a file
+- Add simple default docker-compose.yml file
+
+AWS Elastic Beanstalk
+
+- Create AWS account and Log in
+- Elastic Beanstalk is best for running one container at a time
+- Used sample account
+
+More on Elastic Beanstalk
+
+- When a user hits our app on AWS, it first hits a load balancer that is automatically created by Elastic Beanstalk
+- Load balancer routes requests to a VM running Docker
+- Elastic Beanstalk monitors traffic and adds more nodes to automatically handle surges in traffic
+- Can reach the url for the service from the dashboard in AWS
+
+Travis Config for Deployment
+
+- Deploy to AWS after tets pass
+- Configure deploy section of .travis.yml
+
+Automated Deployments
+
+- Need to add API keys to AWS
+- Generate set of API keys on 
+	- Uses the IAM service
+	- Click users on left side 
+	- Add user named docker-react-travis-ci
+	- Allow for programatic access only
+	- Attach policies (permissions) directly
+		- Deploy application to Elastic Beanstalk
+	- Use environment secrets with travis
+
+Exposing Ports Through the dockerfile
+
+- In the past we have always mapped ports on the command line
+- Port mapping is not specified with Elastic Beanstalk
+- EXPOSE instruction in most cases gives an inidcatior that the port should be mapped to a specific port
+	- By default does nothing
+	- Elastic Beanstalk reads this and opens the port
+
+Workflow With Github
+
+- Multi-engineer flow
+- Use a feature branch
+- Push to Github
+- Create a pull request
+- One accepted deploy to AWS

@@ -1,0 +1,78 @@
+Dockerizing Multiple Services
+
+Dockerizing a React App - Again!
+
+- Make dev Dockerfiles for react app, express server, and the worker
+- Will be a pretty similar flow
+	- Copy over package.json
+	- Run 'npm install'
+	- Copy everything else over
+	- Docker compose should set up a volume to 'share' files
+
+Dockerizing Generic Node Apps
+
+- Creating Dockerfile.dev for server and worker
+- Use 'npm run dev' command with nodemon for hotswap
+
+Adding Postgres as a Service
+
+- Creating a docker compose file
+- Add server, postgres, and redis first
+- For postgres and redis we need to figure out what image to use
+- For the server:
+	- Specify build
+	- Specify volumes
+	- Specify env variables
+- Going to dockerhub to get postgres:latest
+- Need to specify POSTGRES_PASSWORD environment variable
+
+Docker-compose Config
+
+- For server first set a volume placeholder at /app/node_modules
+- Add a second volume of ./server:/app
+
+Env variables with Docker compose
+
+- Specify variables under 'environment'
+- In the server keys.js looks for environment variables, we need to set these
+- If a variable is specified with NAME=test, the value test is set at runtime
+- If a variable is specified as just NAME, it sets the value to the value of that variable on the host
+	- Good for things like API keys
+
+- Recall that services refer can refer to eachother by service name in docker compose. For isntance the value of REDIS_HOST is redis.
+
+Required Client Service Update and Worker Environment Variables
+
+- Need stdin_open: true so that the client doesn't exit right away
+- Need redis host and ports for the worker
+
+Nginx Path Routing
+
+- No ports exposed thus far
+- This is because we haven't gotten to Nginx
+- What does the browser need?
+	- index.html - react
+	- main.js - react
+	- all values - express
+	- current - express
+- Nginx decides where to route varios requests
+
+- In server's index.js the routing does not match the client. /api/ root on client vs / server
+- Nginx will look at if the request path starts with /api/ 
+	- If it does route it the express server
+		- Will chop off the  /api/ chunk before sending it to the server
+	- Otherwise direct to the react server
+
+Routing with Nginx
+
+- default.conf
+	- tell Nginx there is an upstream server at client:3000
+	- tell Nginx there is an upstream server at server:5000
+		- client and server are hostnames, or in the case of docker-compose the name of the service
+	- listen on port 80
+	- If anyone hits '/' send them to the client upstream
+	- If anyone hits '/api' send them to the server upstread
+	- rename server service to api
+- Gonna create a new nginx container that copies our config in
+
+Building a Customer Nginx Image

@@ -1,0 +1,66 @@
+A Continuous Integration Workflow for Multiple Containers
+
+Production Multi-Container Deployments
+
+- Single container setup
+	- Push code to github
+	- Travis automatically pulls repo
+	- Travis builds an image, tests code
+	- Travis pushes code to AWS EB
+	- EB builds image, deploys
+- This builds more than once, which isn't great
+- Flow this time:
+	- Push code to github
+	- Travis automatically pulls repo
+	- Travis builds a test timage, tests code
+	- Travis builds prod image
+	- Travis pushes built prod images to Docker Hub
+	- Travis pushes project to AWS EB
+	- EB pulls images from Docker Hub, deploys
+- EB will no longer build, everything will be done through travis
+
+Production Dockerfiles
+
+- See the complex subdirectories for worker, server, and nginx
+
+Multiple Nginx Instances
+
+- In the single container deployment nginx was on the same container as the prod files
+- This time we'll have the same thing, but it will listen on port 3000
+- First have to go through the first, routing nginx
+- Nginx needs a little extra config
+
+Altering Nginx's Listen Port
+
+- Refer to Dockerfile config in client directory
+
+Cleaning up Tests
+
+- Commented out the tests as the express server may not be up when they run
+
+Github and Travis CI Setup
+
+- Creating the repo: https://github.com/bandersdev/multi-docker
+- Link the repo to the repository from apps/travis-ci.com
+
+Travis Configuration Setup
+
+- Flow:
+	- Specify docker as a dependency
+	- Build test version of React project
+		- Using development Dockerfile
+	- Run tests
+	- Build prod versions of all projects
+	- Push all to docker hub
+	- Tell Elastic Beanstalk to update
+		- we don't have beanstalk set up yet
+
+
+Pushing Images to Docker Hub
+
+- Review the .travis.yml file for all the instructions around
+
+Successful Image Building
+
+- Go to hub.docker.com
+- The images show up right away
