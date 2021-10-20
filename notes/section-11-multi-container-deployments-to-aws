@@ -1,0 +1,6 @@
+Multi-Container Deployments to AWS
+
+This section of the course had completely changed with the advent of Amazon Linux 2. The videos were no longer fully relevent to a modern AWS setup. I followed the text instructions for Amazon Linux 2, which got my application up on AWS and reachable but there were problems making requests to the api and postgres. I tried to debug this for a while, but have very little experience debugging AWS applications, and didn't want to sink hours into that when learning Kubernetes and other topics is more relevent since I won't be doing AWS deployments at work anytime soon. This error is something I would eventually like to return to when I have more AWS knowledge.
+
+The text instruction are in section 165. AWS Configuration Cheat Sheet - Updated for new UI.
+https://www.udemy.com/course/docker-and-kubernetes-the-complete-guide/learn/lecture/21321244#overview
