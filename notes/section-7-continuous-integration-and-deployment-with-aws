@@ -96,3 +96,14 @@ Workflow With Github
 - Push to Github
 - Create a pull request
 - One accepted deploy to AWS
+
+Redeploy on Pull Request Merge
+
+- 2 checks run on Travis when we push
+	- 1 checks if the code is valid
+	- The other checks if the code would be valid if merged to m aster
+
+Development Wrapup
+
+- Docker is a tool for deploying applications
+- We didn't talk about it much in this setting because we didn't really have much else to do. Instead we were working on CI and deployment

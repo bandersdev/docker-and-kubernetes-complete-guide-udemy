@@ -76,3 +76,18 @@ Routing with Nginx
 - Gonna create a new nginx container that copies our config in
 
 Building a Customer Nginx Image
+
+- Pretty simple
+- Use the FROM command with nginx
+- Just copy default.conf over. That's it.
+
+Starting up Docker Compose
+
+- Likely to fail the first time
+- Just start it again
+
+Opening Websocket Connections
+
+- Need to configure nginx to allow for websocket connections
+- Will add it to default.conf
+- Under sockjs-node location

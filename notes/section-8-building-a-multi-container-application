@@ -2,4 +2,37 @@ Building a Multi-Container Application
 
 Single Container Deployment Issues
 
-- 
+- App was simple - no outside dependencies
+- Our image was built multiple times
+- How do we connect to a database from a container?
+
+Application Overview
+
+- Fancy fibonacci sequence calculator
+- Gonna be over the top
+- Web form that allows the user to enter an index and calculate the fibonacci value
+- Display which incides have been calculated and what their values are
+
+Application Architecture
+
+- Back end includes:
+	- Nginx -> React
+				^
+				|
+				v
+			-> Express -> Redis <-> Worker
+					   -> Postgres
+
+- postgres contains values that have been seen
+- redis contains calculated values
+
+-Flow:
+
+user submits number -> React APP -> Express Server -> Store number in Postgres
+												   -> Store index and calculated value in redis -> redis talks to a worker which does the calculating
+Worker Process Setup
+
+- This is the process that watches redis for new indicies and calculates the fib value
+- changes are going in the complex directory under course_materials
+
+- Just skipped the rest of the app setup. Moving on to section 9, where the app gets used
