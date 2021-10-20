@@ -11,6 +11,9 @@ docker compose up --build
 
 # run and detach
 docker compose up -d
+
+# run a specfic docker-compose file
+docker compose -f docker-compose-dev.yml up
 ```
 
 ## Stop containers
