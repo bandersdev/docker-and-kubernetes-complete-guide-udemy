@@ -1,0 +1,211 @@
+Onwards to Kubernetes!
+
+The Why's and What's of Kubernetes
+
+- What is Kubernetes?
+	- A system for running many containers over multiple different machines
+	- Thinking back to the complex application
+		- How would we scale it up?
+			- The worker is the most computationally intensive
+			- Would be nice to spin up multiple workers
+			- This would have been hard to do in Elastic Beanstalk
+				- Elastic beanstalk scales the _entire_ application, not a single container
+			- In Kubernetes clusters can run different numbers of containers on different nodes (servers or vms)
+			- A master in a Kubernetes cluster manages containers on nodes
+				- We interact with the master
+			- The cluster is reached via a load balancer
+- Why use Kubernetes?
+	- When you need to run many different containers with different images
+	- Not needed for an application with one type of container
+
+Kubernetes in Development and Production
+
+- Development
+	- minikube
+		- program to run Kubernetes locally
+		- creates a vm to run a single Kubernetes node
+		- use minikube only for managing the vm
+	- Interact with containers using kubectl
+	- Flow:
+		- Install Kubectl
+		- Install VM driver (virtualbox)
+		- Install minikube
+
+
+- Production
+	- Amazon Elastic Container Service for Kubernetes (EKS) (managed solution)
+	- Google Cloud Kubernetes Engine (GKE) (managed solution)
+	- Do it yourself
+		- More difficult
+
+
+Mapping Existing Knowledge
+
+- Goal: Get the multi-client image running on our local Kubernetes Cluster running as a container
+- In a docker compose file each service:
+	- Can be optionally build with docker compose
+	- Represents a container to create
+	- Defines the networking requirements (ports)
+- How does this map to Kubernetes?
+	- Kubernetes expects all images to already be be build, unlike docker compose
+	- One config file per _object_ to create
+		- An object is not necessarily a container
+	- Networking needs to be set up manually
+		- Will be a lot of the rest of this course
+
+- Steps to get a simple container running on Kubernetes
+	- Make sure our image (multi-client) is hosted on docker hub
+	- Make one config file to create the container
+	- Make on config file to set up networking
+
+A quick note to Prevent an Error
+	- Use the stephengrider/multi-client image to prevent an error in nginx
+	- Won't affect the full application in section 14
+
+Adding Configuration Files
+
+- Add configuration files to simplek8s under course_materials
+- Do discussion after writing the files
+
+Object Types and API Versions
+
+- Going over the client-node-port.yaml and client-pod.yaml files in simplek8s
+
+- What is an object?
+	- A generic name for something that runs in Kubernetes
+	- The kind property determines the type of object
+		- Ex:
+			- StatefulSet
+			- ReplicaController
+			- Pod (in client-pod.yaml)
+			- Service (in client-node-port.yaml)
+	- Some objects run a container (pod), others monitor, yet others configure networking (service)
+	- Created from config files
+	- Pass those config files to kubectl. It creates an object for each file.
+
+- API Version
+	- Different types of objects can be created with different apis
+	- When putting configs together determine which kind of object you want to create
+	- Look up the version from what type you want to make
+
+Running Containers in Pods
+
+- What is a Pod?
+	- Kubernetes runs objects on a server on a Node, which is a VM
+	- Pods are created inside nodes
+	- Pods themselves are groupings of containers with a specific purpose
+	- In Kubernetes there is no such thing as creating a container on a cluster
+		- The smallest thing that can be deployed within a Pod
+	- We _could_ put all containers from our multi app in one Pod, but that's not what Pods are supposed to do
+	- Pods group containers with a similar purpose or must be deployed together for an application to work together
+		- At work for instance I _think_ our containers should be separated into separate pods
+			- Maybe put carte and the portal server in one pod, perhaps with a postgres instance
+		- Should ONLY group containers with a tight integration
+			- Ex. A Pod with a postgres container and 2 processes that need to connect postgres as part of their primary purpose
+				- If postgres goes away the child processes are useless
+
+Service Config Files in Depth
+
+- client-pod.yml discussed in the previous section
+- client-node-port.yaml
+	- Object type: Service
+		- Services set up networking in a Kubernetes Cluster
+	- Pods are pretty simple. No subtypes.
+	- Services have 4 subtypes
+		- ClusterIP
+		- NodePort
+			- Expose containers to the outside world
+			- Only good for development. Very rare to use in production
+			- This is the type used for our client
+		- LoadBalancer
+		- Ingress
+	- Will talk about other types of services later
+	- Connecting to the container in Kubernetes:
+		- web client ->  kube-proxy -> NodePort Service -> port on the container in a Pod
+		- kube-proxy makes sure requests go to the right service
+	- More detail:
+		- Nothing in the service directly says to send traffic to the pod
+		- Use the label selector system
+			- Selects component: web
+			- In client-pod.yaml the pod is labeled as component: web
+			- The selector is arbitrary. Can name it anything.
+		- Looks for all containers with component: web
+		- Exposes the 3000 port to the outside world
+		- 3 Ports
+			- port: The port that another Pod could access to get to the Pod
+				- Not useful for this little example but will be later
+			- targetPort: same as the container port
+			- nodePort: the port that we use in the browser.
+				- In the range 30000-32767
+				- If not specified it is randomly specified from that range
+
+Connecting to Running Containers
+
+- Use kubectl tool
+- Adding kubectl cheat sheet
+- Messages show up pretty quickly. Too quick for containers to really start.
+- A kubernetes app does not run on localhost
+	- Have to ask minikube for its IP
+
+The Entire Deployment Flow
+
+- Walking through the process of what happened when we fed config files into kubectl
+- Killing a container or having a container crash results in an autorestart with Kubernetes
+- Referring to diagrams from this sectional visually can be useful
+- Deployment files (like we made) -> Kubernetes Master -> Docker instances on nodes
+	- Pulls from Docker Hub
+	- Can also pull from a custom repository, which is something we'll need at work
+- Ex.
+	- Deployment that wants to make 4 copies of multi-worker
+	- Assume a kube-apiserver (master) program monitors all nodes in the cluster
+	- kube-apiserver keeps track of what it needs to do and what it has done
+		- Need to run an image called multi-docker
+		- Need to run 4 copies
+		- Right now I'm running 0 copies
+	- Tells nodes to start various number of copies of multi-worker
+	- A copy of docker is running in each
+	- Docker on the nodes reaches out to Docker Hub and grabs the multi-worker image
+	- Each node then uses that image to create containers
+	- Master is constantly watching the nodes
+	- When a container died the master noticed, updated its ledger, then chooses a node and starts a new multi-worker container
+- Takeaways:
+	- When running the deployment file it goes to the master, not directly to a node
+		- As developers we work with the master, not the nodes
+	- The master is always watching the nodes
+		- When problems happen with an object the master tries to remedy it right away
+		- The master is always trying to fulfill its list of responsibilities
+			- This is very important conceptually for Kubernetes
+
+Imperative vs Declarative Deployments
+
+- Review:
+	- At its core Kubernetes is about deploying containerized applications
+	- A node is an individual machines or vms that run containers
+	- Masters are machines or vms with a set of programs to manage nodes
+	- Kubernetes didn't build our images, it got them from somewhere else
+	- The master decides where to deploy objects unless expressly specified
+	- To deploy something, we updated the desired state of the master with a config file
+	- The master works constantly to meet the desired state
+
+- 2 Deployment styles
+	- Imperative: Do exactly these steps to arrive at this container setup
+		- Ex. Make sure you have 3 containers running (currently have 4)
+			- Need to check google cloud or something to see what's running
+			- Figure out a way to migrate from 4 to 3 containers (remove a container)
+				- Not as easy as it seems, but even if it is you have to figure out the desired state, the current state, and create a migration path
+					- Bit of a lift
+		- Ex. Image that there are many containers running on v1 of the multi-docker image
+			- Need to update to v1.23
+			- Need to figure out which containers are running v1 and isolating them, then redeploying v1.23 containers
+
+	- Declarative: Our container setup should look like this, make it happen
+		- Lets the master figure out how to do it
+		- Ex. Image that there are many containers running on v1 of the multi-docker image
+			- Need to update to v1.23
+				- Change config file to specify multi-worker v1.23 (tag on the image in the conf file)
+				- Send the config file off the Kubernetes
+				- Master updates its ledger and the containers
+				- WAY EASIER
+
+- Knowing these two types will be very useful when determining how to do things when reading blogs or commands. They may say to run commands to update pods or w/e, but these things can and should be done declaratively.
+- During this course we will use declarative commands.
