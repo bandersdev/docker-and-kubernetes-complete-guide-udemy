@@ -99,7 +99,7 @@ Running Containers in Pods
 	- We _could_ put all containers from our multi app in one Pod, but that's not what Pods are supposed to do
 	- Pods group containers with a similar purpose or must be deployed together for an application to work together
 		- At work for instance I _think_ our containers should be separated into separate pods
-			- Maybe put carte and the portal server in one pod, perhaps with a postgres instance
+			- Maybe put carte and the pdi_repository in one pod and the portal server and postgres in another
 		- Should ONLY group containers with a tight integration
 			- Ex. A Pod with a postgres container and 2 processes that need to connect postgres as part of their primary purpose
 				- If postgres goes away the child processes are useless
