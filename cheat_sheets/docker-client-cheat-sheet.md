@@ -114,7 +114,7 @@ docker commit -c 'CMD ["redis-server"]' 1d335a7f152b
 
 ### Clean up containers, images and unused networks
 ```bash
-docker system prune
+docker system prune [-a]
 
 #WARNING! This will remove:
 #  - all stopped containers
@@ -127,4 +127,11 @@ docker system prune
 
 ```bash
 docker logs <container id>
+```
+
+### Attach to minikube docker server
+
+The minikube docker-env command sets docker environment variables to point to the minikube docker server
+```bash
+eval $(minikube docker-env)
 ```

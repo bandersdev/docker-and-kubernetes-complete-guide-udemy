@@ -1,0 +1,157 @@
+Maintaining Sets of Containers with Deployments
+
+Updating Existing Objects
+
+- Goal: Update our existing pod to use the multi-worker image (instead of multi-client)
+- Imperative approach:
+	- Run a command to list out currently running pods
+	- Run a comand to update the current pod to use a new image
+- Declarative approach:
+	- Updare your config file that originally created the Pod
+	- Throw the updated config file into kubectl
+- How does the master know to update a Pod instead of creating a new one?
+	- In the config file the object has a name (client-pod)
+	- Every config file will have an object type (kind)
+	- Master inspects the name and kind, and applies changes to any object matching the name and type
+		- Creates a new Pod if none exists
+	- So name and kind are kind of a compound key
+	- If we changed the name to client-pod-new it would create a new object
+
+Declarative Updates in Action
+
+- Applying the multi-worker image in client-pod.yaml and push it in with cubectl
+- How to look in the pod and see the containers running inside
+	- Use kubectl describe command
+
+Limits in Config Updates
+
+- Going to make a config change that will get an error through kubectl
+	- Change port to 9999
+	- Breaks
+- Can only update a few things. Notably including images.
+- There is a workaround using another type of object
+
+Running Containers with Deployments
+
+- Cannot update other fields via kubctl apply including containers and name
+- New type of object: Deployment
+- Deployments maintain a set of identical pods, ensuring that they have the correct configuration and containers are in a runnable state
+
+Pods vs Deployments
+Pods:
+	- Runs a single set of containres
+	- Good for one-off dev porposes
+	- Rarely used in production (largely because of limitations of configuration)
+Deployment:
+	- Runs a set of identical pods
+	- Monitors the state of each pod, updating as necessary
+	- Good for dev and prod
+- Pods were just shown as an easy example
+- From here we kinda forget pods exist from an interactive point of view
+- Deployments have a Pod Template that specifies the pod metadata and container information
+- Updates or replaces pods based on configuration changes and what is permitted to change
+
+
+Deployment Configuration Files
+
+- Going to create a deployment with multi-client and port 3000
+- Writing the file now (client-deployment.yaml) now, going over it in the next section
+
+Walking Through the Deployment Config
+
+- much is repeated from walking through the pod config
+- template section:
+	- the configuration for every pod created by this deployment
+		- similar to the pod definition
+- replicas: specifies the number of pods the deployment makes
+- The deployment configuration is handed off to the master, which then creates the pod
+- The selector section is used to find the pod after its created, this links to the label in the template metadata
+
+Applying a Deployment
+
+- Run the kubectl delete command with the config file to delete the pod
+- This is a imperative command, but it would be difficult to do declaratively
+- Use kubectl apply normally with the deployment configuration file
+
+Why Use Services?
+
+- Why not just directly connect to a pod?
+- Pods get their own ip address which can change if the pod is recreated or deleted
+- The service watches for every pod that matches its selector and route triffic to it, making it easy to keep connected
+
+Scaling and Changing Deployments
+
+- Want to change to port now with deployments
+	- It works!
+	- Kills the pod and creates a new pod
+- Scaling to 5 copies
+	- After applying the config file it creates 4 new pods in addition to the existing pod
+- Switch to the multi-worker image, apply the config, then very quickly get deployments to see that not all pods are ready
+- Can even have more pods as some of the old pods are still up and others are coming up
+
+Update Deployment Images
+
+(I'm just following along for a few sections since I have been using his image rather than working with my own)
+
+- Simulate updating an image and updating a deployment to accomodate it
+- Flow:
+	- Change deployment to use multi-client again, 1 replica, port 3000
+	- Update the multi-client image, push to Docker Hub
+	- Get the deployment to recreate our pods with the latest version of multi-client
+		- Not the easiest, re issue #33664 in the Kubernetes git repo
+
+Rebuilding the Client Image
+
+- Update the multi-client docker image from the complex project
+- Alter the title in the App.js
+- Rebuild the image and push it back to Docker Hub
+	- docker build and docker push
+
+Triggering Deployment Updates
+
+- Why is this challenging?
+- When we make config changes we send an updated config file
+	- But nothing has changed with a new latest of the image, so no config change happens
+- 3 Possible solutions (none of them are great)
+	1. Manually delete all the pods to recreate them with the latest version (Imperative)
+		- silly and dangerous to delete pods manually
+		- avoid it
+	2. Put a version for the image into the deployment
+		- Run kubectl apply after updating the version for a new image
+		- Actionable change to the config file
+		- Downside: Adds an extra step to the deployment
+			- Need to append versions when building
+			- Need to add the version number into the deployment config file
+			- Can't use environment variables in the config files
+	3. Use an imperative command to update the image version the deployment should use
+		- Still append a version number when building the image
+		- Then instead of running the config file run a command that sets the 
+		- This imperative command skips over our config file
+- Solution 1 is the worst. Solution 2 is a pain. Solution 3 is a downer with using an imperative command, but much less convoluded.
+
+Imperatively Updating a Deployment's Image
+
+- Tag the image with a version number and push it to docker hub
+- Run a kubectl command forcing the deployment to use the new image
+- View the kubectl set command
+
+Multiple Docker Installations
+
+- When stephen ran docker ps earlier he saw a lot of containers
+- I don't see that yet
+- Not seeing containers inside the k8s vm (node)
+- When he ran from a fresh terminal no containers show
+	- This uses the default docker
+	- In his other terminals docker is connecting to the docker-server in the vm
+
+Reconfiguring Docker CLI
+
+- Configure the VM to use your docker server:
+	- 'eval $(minikube docker-env)'
+	- This is temporary and needs to be applied in each terminal (or put things in .bashrc)
+- This points docker to the docker server in kk8s
+
+Why Mess with Docker in the Node?
+
+- Earlier we learned that we don't mess around in the virtual machine, so why mess with docker in k8s?
+- 
