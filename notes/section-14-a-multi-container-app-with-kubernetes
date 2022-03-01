@@ -1,0 +1,186 @@
+14. A Multi-Container App with Kubernetes
+
+The Path to Production
+
+- Taking the multi-docker application and turning it into Kubernetes app
+- High level:
+	- Ingress service takes in traffic and routes it to ClusterIP Services to multi-client and multi-server deployments.
+		- The multi-server and multi-worker deployments also route traffic to ClusterIP Services for the Redis and Postgres Deployments
+		- Multi-client and multi-server have multiple pods in their deployment
+		- This all lives on a single node during development (minikube)
+		- The Postgres pod references a Postgres PVC (persistent volume claim)
+	- There are now no NodePorts, instead we use ClusterIPs
+
+- Path to production:
+	- Create config files for each service and deployment
+	- Test locally on minikube
+	- Create a Github/Travis flow to build images and deploy
+	- Deploy app to a cloud provider
+
+Recreating the Deployment
+
+- Clean up existing docker-compose, .travis.yml, and Dockerrun.aws.json files in complex/multi-docker directory
+- Create k8s directory to hold configs
+- One config file for each deployment, cluster IP, and ingress service
+- Recreating the deployment from last section
+
+NodePort vs ClusterIP Services
+
+- A service is used to set up networking for a Kubernetes Cluster
+- NodePorts expose a set of pods to the outside world
+- Cluster IPs expose a set of pods to other objects in the cluster
+	- Allows intra-cluster traffic
+
+The ClusterIP Config
+
+- Creating the yaml config file client-cluster-ip-service.yaml
+- port is the input port
+- targetPort is the port inside the object
+
+Applying Multiple Files with Kubectl
+
+- Delete the old deployment first 
+- Use kubectl apply -f ./k8s from the top multi-docker directory
+
+Express API Deployment Config
+
+- Express app is hardcoded to use port 5000. We will also expose this port via the Cluster IP Service
+- Creating these k8s configs
+
+Cluster IP for the Express API
+
+- Creating the 2nd config file for the Express server
+
+Combining Config Into Single Files
+
+- So far we're creating a config file for every object, but it is possible to organize these entries in a single file
+- use '---' on a line to separate objects in a single file
+- Not doing so in this course because it explicitly tells you the number of objects in a cluster and the naming convention says clearly where things live
+
+The Worker Deployment
+
+- Create the worker-deployment.yaml file
+- Not creating a ClusterIP service for the worker cause nothing else needs to directly connect to it
+- The worker connects to other things in the cluster
+
+Reapplying a Batch of Config Files
+
+- Mostly just doing validation here
+- Re-applies the existing client configs. If there are no changes nothing happens.
+- Generally pretty safe to just re-apply the whole k8s directory. Some exceptions to this will be discussed later
+- Deployments, pods and services are up, but there's a connection error for redis
+
+Creating and Applying Redis Config
+
+- Good news/Bad news
+	- Good news: Set set up redis
+	- Bad news: 2 more similar config files
+
+Important Note about Expected Postgres Error
+
+- kubectl may show errors like this for postgres:
+	- postgres-deployment-6d786d877-hc2ht 0/1 CrashLoopBackOff 1  23s
+	- this is because the db is uninitialized and no superuser POSTGRES_PASSWORD environment variable is set.
+
+Last Set of Boring Config!
+
+- Deployment and ClusterIP for postgres
+
+The neeed for Volumes with Databases
+
+- What is Postgres PVC?
+	- Persistent Volume Claim
+	- The same type of volumes as in Docker
+	- Review of Docker container filesystem transience and the need for volumes
+- Don't point multiple postgres replicas at the same volume.
+
+Kubernetes Volumes
+
+- Clarification around the word 'volume' in k8s
+	- Volume in generic container terminology: 
+		- Some sort of mechanism that allows a container to access a filesystem outside itself
+	- Volume in k8s:
+		- An _object_ that allows a container to store data at the pod level
+- In k8s for data that needs to last we want a Persistent Volume Claim or Persistent Volume. 
+- A k8s Volume should not be used to persist data
+	- A Volume in Kubernetes is tied to a specific Pod
+	- Survives container restarts in a pod
+	- When the pod goes so does the volume
+
+Volumes vs Persistent Volumes
+
+- Persistent Volume vs Volume
+	- Volumes live inside the pod
+	- Persistent Volume lives outside the pod, so it survives the pod
+
+Persistent Volumes vs Persistent Volume Claims
+
+- Analogy about a billboard advertising different sides of hard drives
+	- The billboard is a Persistent Volume Claim (an advertisement/list of options, not an actual volume)
+	- The store inventory are existing Persistent Volumes
+	- If the store inventory does not have an option in stock, it is created
+		- Pre-created volumes are statically provisioned
+		- A volume that needs to be created is dynamically provisioned
+
+Claim Config Files
+
+- create database-persistent-volume-claim.yaml
+
+Persistent Volume Access Modes
+
+- ReadWriteOnce: used by a single node at a time
+- ReadOnlyMany:  multiple nodes can read 
+- ReadWriteMany: multiple nodes can read and write
+
+Where Does Kubernetes Allocate Persistent Volumes
+
+- When the persistent volume claim is requested Kubernetes takes a slice of the hard drive and hands it to the pod
+- In the cloud there can be many ways to persistent volumes
+- See ~4:30 in lecture
+- Configured in kubernetes
+- On a cloud provider this is set by default
+	- If not using default specify a storageClassName in the yaml persistent volume claim yaml file
+
+Designating a PVC in a Pod Template
+
+- Updaing the postgres-deployment.yaml with volume information
+
+Applying a PVC
+
+- Apply the pvc and run kubectl commands to describe it
+
+Defining Environment Variables
+
+- Need to set up redis user and port for multi-server and multi-worker
+- multi-server needs postgres properties
+- Use ClusterIP service names as the hostnames for PGHOST and REDIS_HOST
+	- redis-cluster-ip-service
+	- postgres-cluster-ip-service
+- PGPASSWORD needs to be handled by a secret object
+
+Adding Environment Variables to Config
+
+- add environment variables to server and worker deployments
+
+Creating an Encoded Secret
+
+- Need to set up PGPASSWORD, but we don't want to keep it in plain text
+- A secret is another type of  object
+	- Securely store one or more pieces of information in the cluster, such as a database password or api key
+- Can be created with a config file, but we will create with an imperative command
+	- Why an imperative command?
+		- When you create a secret you have to specify the data immediately
+- Need to override default password in postgres config file to use secret
+
+Postgres Environment Variable Fix
+
+- copied in other changes to postgres deployment
+
+Passing Secrets as Environment Variables
+
+- use the secret for the postgres password in the server and postgres deployments. Use POSTGRES_PASSWORD in the postgres deployment
+
+Environment Variables as String 
+
+- get an error "cannot convery int64 to string" when applying configs
+- need to quote integers to make them strings
