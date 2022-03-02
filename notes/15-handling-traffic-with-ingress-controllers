@@ -1,0 +1,73 @@
+15. Handling Traffic with Ingress Controllers
+
+Load Balancer Services
+
+- Legacy way of getting network traffic into a cluster
+- Config allows access to one set of pods
+	- we want to expose two sets
+- When making a load balance service kubernetes reaches out to the cloud provider to use their own type of load balancer
+- Replaced by Ingresses
+
+A Quick Note on Ingresses
+
+- Ingresses expose a set of services to the outside world
+	- ClusterIPs in our case
+- Several implementations
+- Use are using the kubernetes-backed ingress-nginx: github.com/kubernetes/ingress-nginx
+- NOT kubernetes-ingress (from nginx): github.com/nginxinc/kubernetes-ingress
+- Be sure to look at correct info
+- Get docs from the repo to avoid confusion
+
+One Other Quick Note!
+
+- Setup of ingress-nginx changes depending on your environment
+- We are setting it up on local and GC
+- Ingress is kinda finecky
+
+Behind the Scenes of Ingress
+
+- Reminder that config files state the desired state of our application
+- For instance a deployment views the current state and creates a migration
+- Controllers work to make a desired state a reality
+	- Deployments are controllers
+	- Ingresses are also controllers
+		- Work to ensure routing rules are setup
+- An ingress controller could create a pod running nginx that handles routing
+- Ingress Config -> kubectl -> Ingress Controller -> Something that accepts incoming traffic
+	- ingres-nginx creates a single deployment instead of a pod
+
+More Behind the Scenes of Ingress
+
+- On Google Cloud you get a Google Cloud Load Balancer attached to the Ingress.
+- There is a default-backend deployment, we'll be using it but in production you would want to point it to the app server
+- Why go through all the trouble with the ingress?
+	- Why not just add a custom nginx pod
+	- The ingress nginx has extra code to make it aware it is in k8s
+	- Nginx pod directly routes to pods, bypassing the ClusterIP (it's still there)
+		- Allows sticky sessions
+
+Setting up Ingress Locally with Minikube
+
+- Walk through the installation for ingress-nginx
+- Be sure to run 'minikube addons enable ingress' in addition to the quick start
+
+Ingress v1 API Update + 404 errors
+
+- Holds an updated version of ingress-service.yamnl
+
+Creating the Ingress Configuration
+
+- Similar to other configs with some extra annotations
+- Directly refers to cluster ip services
+
+Testing Ingress Locally
+
+- Time to test the application!
+- Get the ip: 'minikube ip'
+- Nginx uses a fake cert, causes a warning
+	- We'll fix it later
+
+The Minikube Dashboard
+
+- 'minikube dashboard' brings up a web page that shows the status of the kubernetes cluster
+- Can create objects but you may not have a record or your yaml, or edit a pod, but this is not persisted to config files.
