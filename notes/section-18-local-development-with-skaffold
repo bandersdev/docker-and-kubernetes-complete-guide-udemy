@@ -1,0 +1,37 @@
+Local Development with Skaffold
+
+Awkward Local Development
+
+- We don't have an easy way to inject source code into a client pod
+	- Have to use kubectl apply
+- Skaffold is a CLI tool used to facilitate local development
+	- Watches a code directory and updates k8s when it sees changes
+	- 2 modes
+		- Rebuild the client image from scratch, update k8s
+		- Inject updated files into the client pod, rely on the app to automatically update itself
+			- The pod needs to be able to update itself. Not sure how useful this will be for us. Maybe for pdi repository?
+
+Installing Skaffold
+
+- See skaffold.dev/docs/getting-started for instructions
+
+The Skaffold Config File
+
+- Check the skaffold.yaml file
+- Docs at skaffold.dev/docs/references/yaml
+
+Live Sync Changes
+
+- Start skaffold with 'skaffold dev'
+- Change something in one of the js files and check the log for changes
+- Currently this appears to be broken in v1.35.2
+
+Automatic Shutdown
+
+- When shutting down skafold it deletes development pods. Nice when working on different projects
+- This deletion will also take out databases or volumes
+	- Don't add persistent data handling to Skaffold!
+
+Testing Live Sync with the API Server
+
+- Add worker and server configs
